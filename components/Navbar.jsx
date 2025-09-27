@@ -8,8 +8,8 @@ import {useUser, useClerk , UserButton} from "@clerk/nextjs"
 
 const Navbar = () => {
 
-    const {user} = useUser();
-    const {openSignIn} = useClerk();
+    const {user} = useUser(); //To get the user data 
+    const {openSignIn} = useClerk(); // To get the signIn modal
     const router = useRouter();
 
     const [search, setSearch] = useState('')
