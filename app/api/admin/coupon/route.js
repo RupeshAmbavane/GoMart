@@ -17,16 +17,14 @@ export async function POST(request){
         const {coupon} = await request.json()
         coupon.code = coupon.code.toUpperCase()
 
-        await prisma.coupon.create({data: coupon}).then(async (coupon) => {
-            //Run Inngest scheduled function to delete coupon on expiry
-            await inngest.send({
-                name: "app/coupon.expired",
-                data: {
-                    code: coupon.code,
-                    expires_at: coupon.expiresAt
-                }
-            })
-        })
+       const createdCoupon = await prisma.coupon.create({ data: coupon });
+       await inngest.send({
+           name: "app/coupon.expired",
+           data: {
+               code: createdCoupon.code,
+               expires_at: createdCoupon.expiresAt
+           }
+       })
 
         return NextResponse.json({message: "Coupon added successfully"})
     } catch (error) {
@@ -45,7 +43,7 @@ export async function DELETE(request){
             return NextResponse.json({error: "unauthorized"}, {status: 401})
         }
 
-        const {searchParams} = request.nextUrl
+        const { searchParams } = request.nextUrl
         const code = searchParams.get('code')
 
         await prisma.coupon.delete({where: {code}})
