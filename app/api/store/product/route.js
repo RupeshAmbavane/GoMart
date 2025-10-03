@@ -2,6 +2,7 @@ import {getAuth} from "@clerk/nextjs/server"
 import authSeller from "@/middlewares/authSeller"
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
+import imagekit from "@/configs/imageKit"
 
 //Add a new product to the store
 export async function POST(request){
@@ -21,9 +22,9 @@ export async function POST(request){
         const mrp = Number(formData.get("mrp"))
         const price = Number(formData.get("price"))
         const category = formData.get("category")
-        const images = formData.getAll("image")
+        const images = formData.getAll("images")
 
-        if(!name || !description || !mrp || !price || !category || !image){
+        if(!name || !description || !mrp || !price || !category || !images){
             return NextResponse.json({error: "missing product info"}, {status: 400})
         }
 
@@ -82,7 +83,7 @@ export async function GET(request){
         }
     })
 
-    return NextResponse.json(products)
+    return NextResponse.json({products})
     
    } catch (error) {
     console.error(error)

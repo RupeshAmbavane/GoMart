@@ -4,6 +4,7 @@ import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { inngest } from "@/inngest/client"
 
+
 //Add new coupon
 export async function POST(request){
     try {
@@ -14,19 +15,19 @@ export async function POST(request){
             return NextResponse.json({error: "unauthorized"}, {status: 401})
         }
 
-        const {coupon} = await request.json()
+        const { coupon } = await request.json()
         coupon.code = coupon.code.toUpperCase()
 
-       await prisma.coupon.create({data: coupon})
-    //    await inngest.send({
-    //     name: "app/coupon.expired",
-    //     data: {
-    //         code: coupon.code,
-    //         expires_at: coupon.expiresAt,
-    //     },
-    //    })
-    //    return NextResponse.json({message: "Coupon added successfully"})
-          
+       const createdCoupon = await prisma.coupon.create({ data: coupon });
+       await inngest.send({
+           name: "app/coupon.expired",
+           data: {
+               code: createdCoupon.code,
+               expires_at: createdCoupon.expiresAt
+           }
+       })
+
+        return NextResponse.json({message: "Coupon added successfully"})
     } catch (error) {
         console.error(error)
         return NextResponse.json({error: error.code || error.message }, {status: 400})

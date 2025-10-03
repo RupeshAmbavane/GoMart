@@ -7,7 +7,7 @@ import prisma from "@/lib/prisma"
 export async function POST(request){
     try {
         const {userId} = getAuth(request)
-        const productId = await request.json()
+        const {productId} = await request.json()
 
         if(!productId){
             return NextResponse.json({error: "missing product id"}, {status: 400})
@@ -30,7 +30,7 @@ export async function POST(request){
 
         await prisma.product.update({
             where: { id: productId },
-            data: { stock: !product.stock }
+            data: { inStock: !product.inStock }
         })
 
         return NextResponse.json({message: "Product stock updated successfully"})

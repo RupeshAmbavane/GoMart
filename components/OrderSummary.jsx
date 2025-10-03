@@ -4,14 +4,19 @@ import AddressModal from './AddressModal';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import {Protect} from "@clerk/nextjs"
+import { useUser,useAuth } from "@clerk/nextjs"
+import axios from 'axios'
 
 const OrderSummary = ({ totalPrice, items }) => {
 
+    const {user} = useUser()
+    const {getToken} = useAuth()
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$';
 
     const router = useRouter();
 
-    const addressList = useSelector(state => state.address.list);
+    const addressList = useSelector(state => state.address?.list) || [];
 
     const [paymentMethod, setPaymentMethod] = useState('COD');
     const [selectedAddress, setSelectedAddress] = useState(null);
@@ -21,6 +26,22 @@ const OrderSummary = ({ totalPrice, items }) => {
 
     const handleCouponCode = async (event) => {
         event.preventDefault();
+        try{
+           if(!user){
+            toast.error("Please login to apply coupon")
+            return
+           }
+           const token = await getToken()
+           const {data} = await axios.post('/api/coupon', {code: couponCodeInput}, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        setCoupon(data.coupon)
+        toast.success("Coupon applied successfully")
+        } catch (error) {
+            toast.error(error?.response?.data?.error || error.message)
+        }
         
     }
 
@@ -52,18 +73,24 @@ const OrderSummary = ({ totalPrice, items }) => {
                         </div>
                     ) : (
                         <div>
-                            {
-                                addressList.length > 0 && (
-                                    <select className='border border-slate-400 p-2 w-full my-3 outline-none rounded' onChange={(e) => setSelectedAddress(addressList[e.target.value])} >
-                                        <option value="">Select Address</option>
-                                        {
-                                            addressList.map((address, index) => (
-                                                <option key={index} value={index}>{address.name}, {address.city}, {address.state}, {address.zip}</option>
-                                            ))
-                                        }
-                                    </select>
-                                )
-                            }
+                            {Array.isArray(addressList) && addressList.length > 0 ? (
+                            <select 
+                                className='border border-slate-400 p-2 w-full my-3 outline-none rounded' 
+                                onChange={(e) => setSelectedAddress(addressList[e.target.value])}
+                            >
+                                <option value="">Select Address</option>
+                                {addressList.map((address, index) => (
+                                <option key={index} value={index}>
+                                    {address?.name || "No Name"}, 
+                                    {address?.city ? address.city + ", " : ""}
+                                    {address?.state ? address.state + ", " : ""}
+                                    {address?.zip || ""}
+                                </option>
+                                ))}
+                            </select>
+                            ) : (
+                            <p className="text-sm text-gray-500">No saved addresses</p>
+                            )}
                             <button className='flex items-center gap-1 text-slate-600 mt-1' onClick={() => setShowAddressModal(true)} >Add Address <PlusIcon size={18} /></button>
                         </div>
                     )
@@ -78,7 +105,9 @@ const OrderSummary = ({ totalPrice, items }) => {
                     </div>
                     <div className='flex flex-col gap-1 font-medium text-right'>
                         <p>{currency}{totalPrice.toLocaleString()}</p>
-                        <p>Free</p>
+                        <Protect plan="plus" fallback={`${currency}5`}>
+                            <p>Free</p>
+                        </Protect>
                         {coupon && <p>{`-${currency}${(coupon.discount / 100 * totalPrice).toFixed(2)}`}</p>}
                     </div>
                 </div>
@@ -99,7 +128,12 @@ const OrderSummary = ({ totalPrice, items }) => {
             </div>
             <div className='flex justify-between py-4'>
                 <p>Total:</p>
-                <p className='font-medium text-right'>{currency}{coupon ? (totalPrice - (coupon.discount / 100 * totalPrice)).toFixed(2) : totalPrice.toLocaleString()}</p>
+                <p className='font-medium text-right'>
+                    <Protect plan="plus" fallback={`${currency}${coupon ? (totalPrice + 5 - (coupon.discount / 100 * totalPrice)).toFixed(2) : (totalPrice + 5).toLocaleString()}`}>
+                        
+                    </Protect>
+                    {currency}{coupon ? (totalPrice - (coupon.discount / 100 * totalPrice)).toFixed(2) : (totalPrice).toLocaleString()}   
+                </p>
             </div>
             <button onClick={e => toast.promise(handlePlaceOrder(e), { loading: 'placing Order...' })} className='w-full bg-slate-700 text-white py-2.5 rounded hover:bg-slate-900 active:scale-95 transition-all'>Place Order</button>
 
