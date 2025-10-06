@@ -29,7 +29,7 @@ export async function GET(request){
             return NextResponse.json({error: "store not found"}, {status: 404})
         }
 
-        return NextResponse.json(store)
+        return NextResponse.json({ store, products: store.Product })
     }
     catch(error){
         console.error(error)

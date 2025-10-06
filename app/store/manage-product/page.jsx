@@ -18,19 +18,19 @@ export default function StoreManageProducts() {
     const [loading, setLoading] = useState(true)
     const [products, setProducts] = useState([])
 
-    // const fetchProducts = async () => {
-    //     try {
-    //         const token = await getToken()
-    //         const {data} = await axios.get('/api/store/product', {
-    //             headers: {Authorization: `Bearer ${token}`}
-    //         })
-    //         setProducts(data.products.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)))
+    const fetchProducts = async () => {
+        try {
+            const token = await getToken()
+            const {data} = await axios.get('/api/store/product', {
+                headers: {Authorization: `Bearer ${token}`}
+            })
+            setProducts(data.products.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)))
             
-    //     } catch (error) {
-    //         toast.error(error?.response?.data?.error || error.message)
-    //     } 
-    //     setLoading(false)
-    // }
+        } catch (error) {
+            toast.error(error?.response?.data?.error || error.message)
+        } 
+        setLoading(false)
+    }
 
     const toggleStock = async (productId) => {
         // Logic to toggle the stock of a product

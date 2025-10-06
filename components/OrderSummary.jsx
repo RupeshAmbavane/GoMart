@@ -7,9 +7,14 @@ import { useRouter } from 'next/navigation';
 import {Protect} from "@clerk/nextjs"
 import { useUser,useAuth } from "@clerk/nextjs"
 import axios from 'axios'
+import { useDispatch } from 'react-redux'
+import { fetchCart } from '@/lib/features/cart/cartSlice';
+
+
 
 const OrderSummary = ({ totalPrice, items }) => {
 
+    const dispatch = useDispatch()
     const {user} = useUser()
     const {getToken} = useAuth()
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$';
@@ -47,8 +52,43 @@ const OrderSummary = ({ totalPrice, items }) => {
 
     const handlePlaceOrder = async (e) => {
         e.preventDefault();
+        try{
+            if(!user){
+                toast.error("Please login to place order")
+                return
+            }
+            if(!selectedAddress){
+                toast.error("Please select an address")
+                return
+            }
+            const token = await getToken()
+            const orderData = {
+                addressId: selectedAddress.id,
+                items,
+                paymentMethod
+            }
 
-        router.push('/orders')
+            if(coupon){
+                orderData.couponCode = coupon.code
+            }
+
+            //create order
+            const {data} = await axios.post('/api/orders', orderData, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            if(paymentMethod === 'STRIPE'){
+                window.location.href = data.url
+            } else{
+                toast.success(data.message)
+                router.push('/orders')
+                dispatch(fetchCart({getToken}))
+            }
+        } catch (error) {
+            toast.error(error?.response?.data?.error || error.message)
+        }
     }
 
     return (

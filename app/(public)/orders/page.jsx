@@ -2,15 +2,53 @@
 import PageTitle from "@/components/PageTitle"
 import { useEffect, useState } from "react";
 import OrderItem from "@/components/OrderItem";
-import { orderDummyData } from "@/assets/assets";
+import { useAuth } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import Loading from "@/components/Loading";
 
 export default function Orders() {
 
+    const {getToken} = useAuth()
+    const {user, isLoaded} = useUser()
+
     const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(true)
+
+    const router = useRouter()
 
     useEffect(() => {
-        setOrders(orderDummyData)
-    }, []);
+        if (!isLoaded) return; // Wait for Clerk to load
+    
+        if (!user) {
+            router.push('/');
+            return;
+        }
+    
+        const fetchOrders = async () => {
+            try {
+                const token = await getToken();
+                const { data } = await axios.get('/api/orders', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                setOrders(data.orders);
+            } catch (error) {
+                toast.error(error?.response?.data?.error || error.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+    
+        fetchOrders();
+    }, [isLoaded, user, getToken, router]);
+
+    if(!isLoaded || loading){
+        return <Loading />
+    }
 
     return (
         <div className="min-h-[70vh] mx-6">

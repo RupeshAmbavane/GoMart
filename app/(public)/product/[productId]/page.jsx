@@ -11,17 +11,17 @@ export default function Product() {
     const [product, setProduct] = useState();
     const products = useSelector(state => state.product.list);
 
-    // const fetchProduct = async () => {
-    //     const product = products.find((product) => product.id === productId);
-    //     setProduct(product);
-    // }
+    const fetchProduct = async () => {
+        const product = products.find((product) => product.id === productId);
+        setProduct(product);
+    }
 
-    // useEffect(() => {
-    //     if (products.length > 0) {
-    //         fetchProduct()
-    //     }
-    //     scrollTo(0, 0)
-    // }, [productId,products]);
+    useEffect(() => {
+        if (products.length > 0) {
+            fetchProduct()
+        }
+        scrollTo(0, 0)
+    }, [productId,products]);
 
     return (
         <div className="mx-6">
